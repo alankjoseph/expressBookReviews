@@ -4,7 +4,7 @@ let isValid = require("./auth_users.js").isValid;
 let users = require("./auth_users.js").users;
 const public_users = express.Router();
 
-const getBookPromise = (books)=>{
+const getBooksPromise = (books)=>{
     return new Promise((resolve, reject)=>{
         if(books){
             resolve(books)
@@ -32,48 +32,54 @@ public_users.post("/register", (req, res) => {
     }
 });
 
+
 // Get the book list available in the shop
-public_users.get('/', function (req, res) {
-    res.status(200).json(books)
+public_users.get('/', async function (req, res) {
+    const booklist = await getBooksPromise(books)
+    res.status(200).json(booklist)
 });
 
 // Get book details based on ISBN
 public_users.get('/isbn/:isbn', function (req, res) {
     //Write your code here
     const isbn = req.params.isbn;
-    if (!books[isbn]) {
-        return res.status(404).json({ message: "Book not found" });
-    }
-
-    res.status(200).json(books[isbn]);
+    getBooksPromise(books[isbn])
+    .then(
+        result => res.send(result),
+        error => res.send(error)
+    )
     
 });
 
 // Get book details based on author
-public_users.get('/author/:author', function (req, res) {
+public_users.get('/author/:author', async function (req, res) {
     //Write your code here
-    const authorName = req.params.author.toLowerCase(); // Convert to lowercase for case-insensitive search
-    const matchingBooks = Object.values(books).filter(book => book.author.toLowerCase() === authorName);
+    const author = req.params.author;
+    let book = [];
+    let bookList = await getBooksPromise(books);
 
-    if (matchingBooks.length === 0) {
-        return res.status(404).json({ message: "No books found for this author" });
-    }
-
-    res.status(200).json(matchingBooks);
+    Object.keys(bookList).forEach(i => {
+        if(bookList[i].author.toLowerCase() == author.toLowerCase()){
+            book.push(books[i])
+        }
+    });
+    res.send(book);
     
 });
 
 // Get all books based on title
-public_users.get('/title/:title', function (req, res) {
+public_users.get('/title/:title', async function (req, res) {
     //Write your code here
-    const title = req.params.title.toLowerCase(); // Convert to lowercase for case-insensitive search
-    const matchingBooks = Object.values(books).filter(book => book.title.toLowerCase() === title);
+    const title = req.params.title;
+    let book = [];
+    let bookList = await getBooksPromise(books);
 
-    if (matchingBooks.length === 0) {
-        return res.status(404).json({ message: "No books found for this author" });
-    }
-
-    res.status(200).json(matchingBooks);
+    Object.keys(bookList).forEach(i => {
+        if(bookList[i].title.toLowerCase() == title.toLowerCase()){
+            book.push(bookList[i])
+        }
+    });
+    res.send(book);
 });
 
 //  Get book review
